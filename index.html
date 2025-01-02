@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DayZ Crosshair</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      overflow: hidden;
+    }
+    .crosshair {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 4px;
+      height: 4px;
+    }
+    .crosshair-dot {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: rgb(255, 255, 255);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="crosshair">
+    <div class="crosshair-dot"></div>
+  </div>
+</body>
+</html> 
