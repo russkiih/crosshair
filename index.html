@@ -14,8 +14,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 4px;
-      height: 4px;
+      width: 16px;
+      height: 16px;
     }
     .crosshair-dot {
       position: absolute;
@@ -28,11 +28,107 @@
       transform: translate(-50%, -50%);
       box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     }
+    .crosshair-cross {
+      display: none;
+    }
+    .crosshair-cross-h, .crosshair-cross-v {
+      position: absolute;
+      background: rgb(255, 255, 255);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
+    .crosshair-cross-h {
+      height: 2px;
+      width: 16px;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+    }
+    .crosshair-cross-v {
+      width: 2px;
+      height: 16px;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+    .crosshair-circle {
+      display: none;
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      border: 2px solid rgb(255, 255, 255);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    }
   </style>
 </head>
 <body>
   <div class="crosshair">
     <div class="crosshair-dot"></div>
+    <div class="crosshair-cross">
+      <div class="crosshair-cross-h"></div>
+      <div class="crosshair-cross-v"></div>
+    </div>
+    <div class="crosshair-circle"></div>
   </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    // Elements
+    const crosshairDot = document.querySelector('.crosshair-dot');
+    const crosshairCross = document.querySelector('.crosshair-cross');
+    const crosshairCircle = document.querySelector('.crosshair-circle');
+    const crosshairCrossH = document.querySelector('.crosshair-cross-h');
+    const crosshairCrossV = document.querySelector('.crosshair-cross-v');
+
+    // Update crosshair based on settings
+    function updateCrosshair(settings) {
+      // Update color
+      crosshairDot.style.background = settings.color;
+      crosshairCrossH.style.background = settings.color;
+      crosshairCrossV.style.background = settings.color;
+      crosshairCircle.style.borderColor = settings.color;
+      
+      // Update size
+      crosshairDot.style.width = `${settings.size}px`;
+      crosshairDot.style.height = `${settings.size}px`;
+      
+      // Update style
+      crosshairDot.style.display = 'none';
+      crosshairCross.style.display = 'none';
+      crosshairCircle.style.display = 'none';
+      
+      switch (settings.style) {
+        case 'dot':
+          crosshairDot.style.display = 'block';
+          break;
+        case 'cross':
+          crosshairCross.style.display = 'block';
+          break;
+        case 'circle':
+          crosshairCircle.style.display = 'block';
+          break;
+        case 'dot_cross':
+          crosshairDot.style.display = 'block';
+          crosshairCross.style.display = 'block';
+          break;
+        case 'dot_circle':
+          crosshairDot.style.display = 'block';
+          crosshairCircle.style.display = 'block';
+          break;
+        default:
+          crosshairDot.style.display = 'block';
+          break;
+      }
+    }
+
+    // Listen for settings updates from main process
+    ipcRenderer.on('update-crosshair', (event, settings) => {
+      updateCrosshair(settings);
+    });
+  </script>
 </body>
 </html> 
