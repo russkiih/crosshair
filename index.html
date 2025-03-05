@@ -14,8 +14,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 16px;
-      height: 16px;
+      width: 64px;
+      height: 64px;
     }
     .crosshair-dot {
       position: absolute;
@@ -29,7 +29,11 @@
       box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     }
     .crosshair-cross {
-      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
     }
     .crosshair-cross-h, .crosshair-cross-v {
       position: absolute;
@@ -40,15 +44,15 @@
       height: 2px;
       width: 16px;
       top: 50%;
-      left: 0;
-      transform: translateY(-50%);
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     .crosshair-cross-v {
       width: 2px;
       height: 16px;
+      top: 50%;
       left: 50%;
-      top: 0;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
     }
     .crosshair-circle {
       display: none;
@@ -92,9 +96,20 @@
       crosshairCrossV.style.background = settings.color;
       crosshairCircle.style.borderColor = settings.color;
       
-      // Update size
+      // Update size for all styles
       crosshairDot.style.width = `${settings.size}px`;
       crosshairDot.style.height = `${settings.size}px`;
+      
+      // Update cross size with thickness
+      crosshairCrossH.style.height = `${settings.thickness || 2}px`; 
+      crosshairCrossH.style.width = `${settings.size * 4}px`;
+      crosshairCrossV.style.width = `${settings.thickness || 2}px`;
+      crosshairCrossV.style.height = `${settings.size * 4}px`;
+      
+      // Update circle size with thickness for border
+      crosshairCircle.style.width = `${settings.size * 3}px`;
+      crosshairCircle.style.height = `${settings.size * 3}px`;
+      crosshairCircle.style.borderWidth = `${settings.thickness || 1}px`;
       
       // Update style
       crosshairDot.style.display = 'none';
@@ -116,8 +131,13 @@
           crosshairCross.style.display = 'block';
           break;
         case 'dot_circle':
+          // For dot+circle, keep dot size fixed and only adjust circle
+          crosshairDot.style.width = '4px';
+          crosshairDot.style.height = '4px';
           crosshairDot.style.display = 'block';
           crosshairCircle.style.display = 'block';
+          // Use thickness setting for border in dot+circle too
+          crosshairCircle.style.borderWidth = `${Math.min(2, settings.thickness || 1)}px`;
           break;
         default:
           crosshairDot.style.display = 'block';

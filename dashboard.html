@@ -128,8 +128,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 16px;
-      height: 16px;
+      width: 64px;
+      height: 64px;
     }
     
     .preview-dot {
@@ -144,7 +144,11 @@
     }
     
     .preview-cross {
-      display: none;
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
     }
     
     .preview-cross-h, .preview-cross-v {
@@ -156,16 +160,16 @@
       height: 2px;
       width: 16px;
       top: 50%;
-      left: 0;
-      transform: translateY(-50%);
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     
     .preview-cross-v {
       width: 2px;
       height: 16px;
+      top: 50%;
       left: 50%;
-      top: 0;
-      transform: translateX(-50%);
+      transform: translate(-50%, -50%);
     }
     
     .preview-circle {
@@ -195,6 +199,26 @@
     
     .apply-button:hover {
       background-color: #5f73bc;
+    }
+    
+    .keybind-settings {
+      padding: 10px;
+    }
+    
+    .keybind-dropdown {
+      width: 100%;
+      padding: 10px;
+      background-color: #3d3d3d;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    
+    .keybind-dropdown option {
+      background-color: #3d3d3d;
+      color: white;
     }
   </style>
 </head>
@@ -250,6 +274,24 @@
       </div>
     </div>
     
+    <div class="setting-group">
+      <h2>Thickness</h2>
+      <div class="setting-row">
+        <label for="thickness-slider">Adjust thickness: <span id="thickness-value">2</span>px</label>
+        <input type="range" id="thickness-slider" class="size-slider" min="1" max="5" value="2">
+      </div>
+    </div>
+    
+    <div class="setting-group">
+      <h2>Keybind</h2>
+      <div class="setting-row">
+        <label for="toggle-keybind">Show/Hide Crosshair Keybind</label>
+        <select id="toggle-keybind" class="keybind-dropdown">
+          <!-- Will be populated via JavaScript -->
+        </select>
+      </div>
+    </div>
+    
     <button class="apply-button">Apply Settings</button>
   </div>
 
@@ -260,8 +302,11 @@
     const colorPicker = document.getElementById('color-picker');
     const sizeSlider = document.getElementById('size-slider');
     const sizeValue = document.getElementById('size-value');
+    const thicknessSlider = document.getElementById('thickness-slider');
+    const thicknessValue = document.getElementById('thickness-value');
     const styleOptions = document.querySelectorAll('.style-option');
     const applyButton = document.querySelector('.apply-button');
+    const toggleKeybind = document.getElementById('toggle-keybind');
     
     // Preview elements
     const previewDot = document.querySelector('.preview-dot');
@@ -274,7 +319,9 @@
     let currentSettings = {
       color: '#FFFFFF',
       size: 4,
-      style: 'dot'
+      thickness: 2,
+      style: 'dot',
+      toggleKey: 'F8'
     };
     
     // Update the preview
@@ -285,9 +332,22 @@
       previewCrossV.style.background = currentSettings.color;
       previewCircle.style.borderColor = currentSettings.color;
       
-      // Update size
+      // Update size for all styles
       previewDot.style.width = `${currentSettings.size}px`;
       previewDot.style.height = `${currentSettings.size}px`;
+      
+      // Update cross size
+      previewCrossH.style.height = `${currentSettings.thickness}px`;
+      previewCrossH.style.width = `${currentSettings.size * 4}px`;
+      previewCrossV.style.width = `${currentSettings.thickness}px`;
+      previewCrossV.style.height = `${currentSettings.size * 4}px`;
+      
+      // Update circle size - limit border width
+      previewCircle.style.width = `${currentSettings.size * 3}px`;
+      previewCircle.style.height = `${currentSettings.size * 3}px`;
+      
+      // Set border width based on thickness setting
+      previewCircle.style.borderWidth = `${currentSettings.thickness}px`;
       
       // Update style
       previewDot.style.display = 'none';
@@ -309,12 +369,39 @@
           previewCross.style.display = 'block';
           break;
         case 'dot_circle':
+          // For dot+circle, keep dot size fixed and only adjust circle
+          previewDot.style.width = '4px';
+          previewDot.style.height = '4px';
           previewDot.style.display = 'block';
           previewCircle.style.display = 'block';
+          // Use thickness setting for border in dot+circle too
+          previewCircle.style.borderWidth = `${Math.min(2, currentSettings.thickness)}px`;
           break;
         default:
           previewDot.style.display = 'block';
           break;
+      }
+    }
+    
+    // Populate keybind dropdown
+    async function populateKeybindDropdown() {
+      try {
+        const shortcuts = await ipcRenderer.invoke('get-valid-shortcuts');
+        toggleKeybind.innerHTML = '';
+        
+        shortcuts.forEach(shortcut => {
+          const option = document.createElement('option');
+          option.value = shortcut;
+          option.textContent = shortcut;
+          toggleKeybind.appendChild(option);
+        });
+        
+        // Set the current value if it exists in settings
+        if (currentSettings.toggleKey) {
+          toggleKeybind.value = currentSettings.toggleKey;
+        }
+      } catch (error) {
+        console.error('Failed to get shortcuts:', error);
       }
     }
     
@@ -327,6 +414,12 @@
       sizeSlider.value = settings.size;
       sizeValue.textContent = settings.size;
       
+      // Set thickness slider if present in settings
+      if (settings.thickness !== undefined) {
+        thicknessSlider.value = settings.thickness;
+        thicknessValue.textContent = settings.thickness;
+      }
+      
       // Update style selection
       styleOptions.forEach(option => {
         option.classList.remove('selected');
@@ -337,6 +430,9 @@
       
       // Update preview
       updatePreview();
+      
+      // Initialize keybind dropdown
+      populateKeybindDropdown();
     });
     
     // Event listeners
@@ -351,6 +447,12 @@
       updatePreview();
     });
     
+    thicknessSlider.addEventListener('input', () => {
+      currentSettings.thickness = parseInt(thicknessSlider.value);
+      thicknessValue.textContent = thicknessSlider.value;
+      updatePreview();
+    });
+    
     styleOptions.forEach(option => {
       option.addEventListener('click', () => {
         styleOptions.forEach(o => o.classList.remove('selected'));
@@ -358,6 +460,10 @@
         currentSettings.style = option.dataset.style;
         updatePreview();
       });
+    });
+    
+    toggleKeybind.addEventListener('change', () => {
+      currentSettings.toggleKey = toggleKeybind.value;
     });
     
     applyButton.addEventListener('click', () => {
