@@ -4,9 +4,38 @@
   "description": "DayZ Crosshair Overlay",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^25.9.8"
+    "electron": "^25.9.8",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.crosshair.overlay",
+    "productName": "Crosshair",
+    "files": [
+      "**/*",
+      "!dist",
+      "!node_modules"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "."
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
   }
 }
