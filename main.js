@@ -13,6 +13,7 @@ if (!gotTheLock) {
 let tray = null;
 let win = null;
 let dashboardWin = null;
+let isQuitting = false;
 
 // Default crosshair settings
 let crosshairSettings = {
@@ -109,8 +110,10 @@ function createDashboard() {
   });
 
   dashboardWin.on('close', (e) => {
-    e.preventDefault();
-    dashboardWin.hide();
+    if (!isQuitting) {
+      e.preventDefault();
+      dashboardWin.hide();
+    }
   });
 }
 
@@ -132,7 +135,7 @@ function updateTrayMenu() {
     {
       label: 'Settings',
       click: () => {
-        if (dashboardWin) {
+        if (dashboardWin && !dashboardWin.isDestroyed()) {
           dashboardWin.show();
         }
       }
@@ -140,17 +143,19 @@ function updateTrayMenu() {
     {
       label: `Show/Hide Crosshair (${crosshairSettings.toggleKey || 'No key set'})`,
       click: () => {
-        if (win.isVisible()) {
-          win.hide();
-        } else {
-          win.show();
+        if (win && !win.isDestroyed()) {
+          if (win.isVisible()) {
+            win.hide();
+          } else {
+            win.show();
+          }
         }
       }
     },
     {
       label: 'Pin to Taskbar',
       click: () => {
-        if (dashboardWin) {
+        if (dashboardWin && !dashboardWin.isDestroyed()) {
           dashboardWin.show();
           // Add a message to instruct user how to pin
           dialog.showMessageBox(dashboardWin, {
@@ -166,6 +171,7 @@ function updateTrayMenu() {
     {
       label: 'Quit',
       click: () => {
+        isQuitting = true;
         app.quit();
       }
     }
@@ -184,10 +190,12 @@ function registerToggleShortcut() {
   if (crosshairSettings.toggleKey) {
     try {
       globalShortcut.register(crosshairSettings.toggleKey, () => {
-        if (win.isVisible()) {
-          win.hide();
-        } else {
-          win.show();
+        if (win && !win.isDestroyed()) {
+          if (win.isVisible()) {
+            win.hide();
+          } else {
+            win.show();
+          }
         }
       });
     } catch (err) {
@@ -200,12 +208,17 @@ function registerToggleShortcut() {
 app.setAppUserModelId('com.dayz.crosshair');
 app.name = 'DayZ Crosshair';
 
+// When app is about to quit, allow all windows to close
+app.on('before-quit', () => {
+  isQuitting = true;
+});
+
 // When user tries to open another instance, focus the existing app instead
 app.on('second-instance', () => {
-  if (dashboardWin) {
+  if (dashboardWin && !dashboardWin.isDestroyed()) {
     dashboardWin.show();
     dashboardWin.focus();
-  } else if (win) {
+  } else if (win && !win.isDestroyed()) {
     win.show();
     win.focus();
   }
@@ -230,7 +243,7 @@ app.whenReady().then(() => {
     }
     
     // Update the crosshair display
-    if (win) {
+    if (win && !win.isDestroyed()) {
       win.webContents.send('update-crosshair', settings);
     }
     
