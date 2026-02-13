@@ -2,6 +2,14 @@ const { app, BrowserWindow, Tray, Menu, ipcMain, dialog, globalShortcut } = requ
 const path = require('path');
 const fs = require('fs');
 
+// Single instance lock - prevents multiple app instances (which cause duplicate tray/taskbar icons)
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+  process.exit(0);
+}
+
 let tray = null;
 let win = null;
 let dashboardWin = null;
@@ -11,6 +19,7 @@ let crosshairSettings = {
   color: '#FFFFFF',
   size: 4,
   thickness: 2,
+  opacity: 100,
   style: 'dot', // dot, cross, circle, dot_circle
   toggleKey: 'F8' // Default toggle key
 };
@@ -93,7 +102,10 @@ function createDashboard() {
   dashboardWin.setMenu(null);
   
   dashboardWin.webContents.on('did-finish-load', () => {
-    dashboardWin.webContents.send('init-settings', crosshairSettings);
+    dashboardWin.webContents.send('init-settings', {
+      ...crosshairSettings,
+      appVersion: app.getVersion?.() || '1.0.0'
+    });
   });
 
   dashboardWin.on('close', (e) => {
@@ -187,6 +199,17 @@ function registerToggleShortcut() {
 // Set app identity
 app.setAppUserModelId('com.dayz.crosshair');
 app.name = 'DayZ Crosshair';
+
+// When user tries to open another instance, focus the existing app instead
+app.on('second-instance', () => {
+  if (dashboardWin) {
+    dashboardWin.show();
+    dashboardWin.focus();
+  } else if (win) {
+    win.show();
+    win.focus();
+  }
+});
 
 app.whenReady().then(() => {
   loadSettings();
